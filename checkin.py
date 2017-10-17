@@ -7,9 +7,9 @@ import re
 from sys import platform
 
 # Change to the correct directory
-if not os.path.exists("scripts/checkin.py"):
+if not os.path.exists("vivado-git/checkin.py"):
     BasePath = os.path.dirname(os.path.realpath(__file__))
-    BasePath = BasePath[:-7]
+    BasePath = BasePath[:-10]
     os.chdir(BasePath)
 
 # Find the Vivado project

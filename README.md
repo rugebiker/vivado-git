@@ -12,7 +12,7 @@ The project must have a specific folder structure. It is as follows:
 
 ```
 .
-+-- scripts # Directory containing the vivado-git scripts
++-- vivado-git # Directory containing the vivado-git scripts
 |   +-- checkin.py # script to check in the project
 |   +-- checkout.py # script to check out the project
 |   +-- README.md # this readme file
