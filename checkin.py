@@ -37,25 +37,46 @@ else:
 vp.communicate(input="write_project_tcl -force \".exported.tcl\"\n; foreach {bd_file} [get_files -filter {FILE_TYPE == \"Block Designs\"}] { open_bd_design $bd_file; write_bd_tcl \"" + SourcesBdDir + "/[file rootname [file tail $bd_file]].tcl\"; close_bd_design [file rootname [file tail $bd_file]]}\n"),[0]
 
 rem = 0
+total_sources = 0
+bad_sources = 0
+count_sources = 0
 # The tcl is stored in a temporary file so it can be processed and the end result is saved in /tcl/ folder
 with open(".exported.tcl", 'r') as fin:
     with open("tcl/" + ProjectName + ".tcl", 'w') as fout:
         print ("Lines removed from original tcl:\n")
         for line in fin:
             if rem == 0:
+                
+                if count_sources == 1:      # Count the sources
+                    if re.match(r"^]", line) == None:
+                        total_sources = total_sources + 1
+                    else:
+                        if total_sources == bad_sources:    # If the total sources is same as the removed ones, remove the line after as there are no sources to process
+                            rem = 1
+                        count_sources = 0
+
                 CreateProjectRegEx = re.match(r"^create_project.* -part (.*)", line)
 
                 if CreateProjectRegEx != None:      # Modify "create_project" command to store the project inside the workspace directory
                    fout.write("create_project " + ProjectName + " workspace/" + ProjectName + " -part " + CreateProjectRegEx.group(1)) 
 
+                elif re.match(r"^set files \[list \\", line) != None:   # Count the number of sources to import
+                    count_sources = 1
+                    fout.write(line)
+
                 elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/\2.bd\"]\"\\", line) != None:    # Remove all the references to block design
+                    bad_sources = bad_sources + 1
                     print(line)
+                    fout.write("## Vivado-git removed ## " + line)
 
                 elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"]\"\\", line) != None:  # Remove the block design wrappers. They will be auto-generated later
+                    bad_sources = bad_sources + 1
                     print(line)
+                    fout.write("## Vivado-git removed ## " + line)
 
                 elif re.match(r"^set file \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"", line) != None:    # Remove the block design wrappers. They will be auto-generated later
                     print(line)
+                    fout.write("## Vivado-git removed ## " + line)
                     rem = 3
 
                 else:   # Write the lines to the new file
@@ -63,6 +84,7 @@ with open(".exported.tcl", 'r') as fin:
 
             else:   # Necessary as the block design wrappers have also some extra lines belonging to them that need to be removed
                 rem = rem - 1;
+                fout.write("## Vivado-git removed ## " + line)
                 print(line)
     
         fout.write("\n")
