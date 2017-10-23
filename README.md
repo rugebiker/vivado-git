@@ -6,6 +6,7 @@ This scripts help to commit Vivado projects into Git.
 - OS: Tested on GNU/Linux and Windows
 - Python and Vivado binaries must be in your PATH
   - To add Vivado to your path in Linux you can source "<Xilinx installation directory>/Vivado/<version>/settings64.sh". For Windows execute from the same directory "settings64.bat".
+- Tested with Vivado 2017.2, 2017.3
 
 ### Folder structure
 The project must have a specific folder structure. It is as follows:
