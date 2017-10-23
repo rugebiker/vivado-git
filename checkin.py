@@ -19,13 +19,6 @@ for VivadoProject in glob.glob("workspace/*/*.xpr"):
 ProjectName = ntpath.basename(ntpath.splitext(VivadoProject)[0])
 SourcesBdDir = "tcl/" + ProjectName + ".bd"
 
-# Create folders if they don't exist
-if not os.path.isdir(SourcesBdDir):
-    os.makedirs(SourcesBdDir)
-
-if not os.path.isdir("tcl"):
-    os.makedirs("tcl")
-
 if platform == "win32":
     VivadoProcess = Popen(["vivado", "-version"], shell=True, stdout=PIPE)
 else:
@@ -34,6 +27,14 @@ VivadoVersion = VivadoProcess.stdout.read()
 VivadoRegEx = re.match(r"^Vivado (v.*) ", VivadoVersion)
 VivadoInstalled = VivadoRegEx.group(1)
 print ("Vivado version being used: " + VivadoInstalled)
+
+# Create folders if they don't exist
+if VivadoInstalled == "v2017.2":
+    if not os.path.isdir(SourcesBdDir):
+        os.makedirs(SourcesBdDir)
+
+if not os.path.isdir("tcl"):
+    os.makedirs("tcl")
 
 print "Exporting Project TCL from Vivado"
 # Open vivado depending on the OS
