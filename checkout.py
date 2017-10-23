@@ -41,7 +41,7 @@ VivadoInstalled = VivadoRegEx.group(1)
 if VivadoTcl == VivadoInstalled:
     print "Vivado version matches: " + VivadoTcl + "\n"
 else:
-    print "This project was built using Vivado " + VivadoTcl + " and your installed Vivado version is " + VivadoInstalled + "."
+    print "This project was built using Vivado " + VivadoTcl + " and your installed Vivado version is " + VivadoInstalled + ". Usually this is not a problem, but check the log for possible errors."
     answer = raw_input( "Would you still like to continue generating the project? (y,N):   ")
     if not (answer == 'y' or answer == 'Y'):
         sys.exit()

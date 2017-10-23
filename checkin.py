@@ -20,11 +20,20 @@ ProjectName = ntpath.basename(ntpath.splitext(VivadoProject)[0])
 SourcesBdDir = "tcl/" + ProjectName + ".bd"
 
 # Create folders if they don't exist
+if not os.path.isdir(SourcesBdDir):
+    os.makedirs(SourcesBdDir)
+
 if not os.path.isdir("tcl"):
     os.makedirs("tcl")
 
-if not os.path.isdir(SourcesBdDir):
-    os.makedirs(SourcesBdDir)
+if platform == "win32":
+    VivadoProcess = Popen(["vivado", "-version"], shell=True, stdout=PIPE)
+else:
+    VivadoProcess = Popen(["vivado", "-version"], stdout=PIPE)
+VivadoVersion = VivadoProcess.stdout.read()
+VivadoRegEx = re.match(r"^Vivado (v.*) ", VivadoVersion)
+VivadoInstalled = VivadoRegEx.group(1)
+print ("Vivado version being used: " + VivadoInstalled)
 
 print "Exporting Project TCL from Vivado"
 # Open vivado depending on the OS
@@ -34,7 +43,10 @@ else:
     vp = Popen(["vivado", '-nojournal', '-nolog', '-mode', 'tcl', VivadoProject], stdin=PIPE)
 
 # Give commands to vivado to export project tcl and block design tcls
-vp.communicate(input="write_project_tcl -force \".exported.tcl\"\n; foreach {bd_file} [get_files -filter {FILE_TYPE == \"Block Designs\"}] { open_bd_design $bd_file; write_bd_tcl \"" + SourcesBdDir + "/[file rootname [file tail $bd_file]].tcl\"; close_bd_design [file rootname [file tail $bd_file]]}\n"),[0]
+if VivadoInstalled == "v2017.2":
+    vp.communicate(input="write_project_tcl -force \".exported.tcl\"\n; foreach {bd_file} [get_files -filter {FILE_TYPE == \"Block Designs\"}] { open_bd_design $bd_file; write_bd_tcl \"" + SourcesBdDir + "/[file rootname [file tail $bd_file]].tcl\"; close_bd_design [file rootname [file tail $bd_file]]}\n"),[0]
+else:
+    vp.communicate(input="write_project_tcl -force \".exported.tcl\"\n"),[0]
 
 rem = 0
 total_sources = 0
@@ -64,6 +76,11 @@ with open(".exported.tcl", 'r') as fin:
                     count_sources = 1
                     fout.write(line)
 
+                elif re.match(r"^set file \"hdl/[^ /]+_wrapper\.v(?:hd)?\"", line) != None:     # Remove block design wrappers. They will be auto-generated later
+                    print(line)
+                    fout.write("## Vivado-git removed ## " + line)
+                    rem = 2
+
                 elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/\2.bd\"]\"\\", line) != None:    # Remove all the references to block design
                     bad_sources = bad_sources + 1
                     print(line)
@@ -89,13 +106,14 @@ with open(".exported.tcl", 'r') as fin:
     
         fout.write("\n")
 
-        print("Adding block design tcls\n")
-
         # At the end of the tcl, add commands to include the block designs and generate the wrappers
-        for file in os.listdir(SourcesBdDir):
-            if file.endswith(".tcl"):
-                fout.write("source " + SourcesBdDir + "/" + file + "\n")
-                fout.write("add_files -norecurse -force [make_wrapper -files [get_files " + file.strip(".tcl") + ".bd] -top]\n")
+        if VivadoInstalled == "v2017.2":
+            print("Adding block design tcls\n")
+            for file in os.listdir(SourcesBdDir):
+                if file.endswith(".tcl"):
+                    fout.write("source " + SourcesBdDir + "/" + file + "\n")
+
+        fout.write("add_files -norecurse -force [make_wrapper -files [get_files *.bd] -top]\n")
 
 # Remove the temporary tcl file
 os.remove(".exported.tcl")
