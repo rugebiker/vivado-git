@@ -67,6 +67,8 @@ with open(".exported.tcl", 'r') as fin:
                         if total_sources == bad_sources:    # If the total sources is same as the removed ones, remove the line after as there are no sources to process
                             rem = 1
                         count_sources = 0
+                        bad_sources = 0
+                        total_sources = 0
 
                 CreateProjectRegEx = re.match(r"^create_project.* -part (.*)", line)
 
