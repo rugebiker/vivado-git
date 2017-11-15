@@ -1,16 +1,20 @@
 import sys
-from subprocess import call
+from subprocess import call, Popen, PIPE, STDOUT
 import glob, os
 import ntpath
-from subprocess import Popen, PIPE, STDOUT
 import re
 from sys import platform
 
 # Change to the correct directory
 if not os.path.exists("vivado-git/checkin.py"):
     BasePath = os.path.dirname(os.path.realpath(__file__))
-    BasePath = BasePath[:-10]
+    BasePath = os.path.dirname(os.path.realpath(BasePath))
     os.chdir(BasePath)
+
+# If there are more than 2 projects, print error and exit
+if sum(os.path.isdir(os.path.join('workspace', i)) for i in os.listdir('workspace')) > 1:
+    print "Error: Found more than 2 projects in the workspace directory"
+    sys.exit()
 
 # Find the Vivado project
 for VivadoProject in glob.glob("workspace/*/*.xpr"):
@@ -26,7 +30,10 @@ else:
 VivadoVersion = VivadoProcess.stdout.read()
 VivadoRegEx = re.match(r"^Vivado (v.*) ", VivadoVersion)
 VivadoInstalled = VivadoRegEx.group(1)
-print ("Vivado version being used: " + VivadoInstalled)
+if VivadoInstalled in ("v2017.2", "v2017.3"):
+    print ("Vivado version being used: " + VivadoInstalled)
+else:
+    print ("Warning: Generating scripts with an untested Vivado version, please test the checkout script after generating the scripts")
 
 # Create folders if they don't exist
 if VivadoInstalled == "v2017.2":
@@ -59,12 +66,13 @@ with open(".exported.tcl", 'r') as fin:
         print ("Lines removed from original tcl:\n")
         for line in fin:
             if rem == 0:
-                
-                if count_sources == 1:      # Count the sources
+                # Count the sources
+                if count_sources == 1:
                     if re.match(r"^]", line) == None:
                         total_sources = total_sources + 1
                     else:
-                        if total_sources == bad_sources:    # If the total sources is same as the removed ones, remove the line after as there are no sources to process
+                        # If the total sources is same as the removed ones, remove the line after as there are no sources to process
+                        if total_sources == bad_sources:
                             rem = 1
                         count_sources = 0
                         bad_sources = 0
@@ -72,37 +80,45 @@ with open(".exported.tcl", 'r') as fin:
 
                 CreateProjectRegEx = re.match(r"^create_project.* -part (.*)", line)
 
-                if CreateProjectRegEx != None:      # Modify "create_project" command to store the project inside the workspace directory
+                # Modify "create_project" command to store the project inside the workspace directory
+                if CreateProjectRegEx != None:
                    fout.write("create_project " + ProjectName + " workspace/" + ProjectName + " -part " + CreateProjectRegEx.group(1)) 
 
-                elif re.match(r"^set files \[list \\", line) != None:   # Count the number of sources to import
+                # Count the number of sources to import
+                elif re.match(r"^set files \[list \\", line) != None:
                     count_sources = 1
                     fout.write(line)
 
-                elif re.match(r"^set file \"hdl/[^ /]+_wrapper\.v(?:hd)?\"", line) != None:     # Remove block design wrappers. They will be auto-generated later
+                # Remove block design wrappers. They will be auto-generated later
+                elif re.match(r"^set file \"hdl/[^ /]+_wrapper\.v(?:hd)?\"", line) != None:
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
                     rem = 2
 
-                elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/\2.bd\"]\"\\", line) != None:    # Remove all the references to block design
+                # Remove all the references to block design
+                elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/\2.bd\"]\"\\", line) != None:
                     bad_sources = bad_sources + 1
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
 
-                elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"]\"\\", line) != None:  # Remove the block design wrappers. They will be auto-generated later
+                # Remove the block design wrappers. They will be auto-generated later
+                elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"]\"\\", line) != None:
                     bad_sources = bad_sources + 1
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
 
-                elif re.match(r"^set file \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"", line) != None:    # Remove the block design wrappers. They will be auto-generated later
+                # Remove the block design wrappers. They will be auto-generated later
+                elif re.match(r"^set file \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"", line) != None:
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
                     rem = 3
 
-                else:   # Write the lines to the new file
+                # Write the lines to the new file
+                else:
                     fout.write(line)
 
-            else:   # Necessary as the block design wrappers have also some extra lines belonging to them that need to be removed
+            # Necessary as the block design wrappers have also some extra lines belonging to them that need to be removed
+            else:
                 rem = rem - 1;
                 fout.write("## Vivado-git removed ## " + line)
                 print(line)

@@ -1,14 +1,13 @@
 import sys
-from subprocess import call
+from subprocess import call, Popen, PIPE, STDOUT
 import glob, os
-from subprocess import Popen, PIPE, STDOUT
 import re
 from sys import platform
 
 # Change to the correct directory
 if not os.path.exists("vivado-git/checkin.py"):
     BasePath = os.path.dirname(os.path.realpath(__file__))
-    BasePath = BasePath[:-10]
+    BasePath = os.path.dirname(os.path.realpath(BasePath))
     os.chdir(BasePath)
 
 # Look for the tcl script
