@@ -60,6 +60,7 @@ rem = 0
 total_sources = 0
 bad_sources = 0
 count_sources = 0
+block_design = 0
 # The tcl is stored in a temporary file so it can be processed and the end result is saved in /tcl/ folder
 with open(".exported.tcl", 'r') as fin:
     with open("tcl/" + ProjectName + ".tcl", 'w') as fout:
@@ -94,24 +95,28 @@ with open(".exported.tcl", 'r') as fin:
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
                     rem = 2
+                    block_design = 1
 
                 # Remove all the references to block design
                 elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/\2.bd\"]\"\\", line) != None:
                     bad_sources = bad_sources + 1
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
+                    block_design = 1
 
                 # Remove the block design wrappers. They will be auto-generated later
                 elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"]\"\\", line) != None:
                     bad_sources = bad_sources + 1
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
+                    block_design = 1
 
                 # Remove the block design wrappers. They will be auto-generated later
                 elif re.match(r"^set file \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"", line) != None:
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
                     rem = 3
+                    block_design = 1
 
                 # Write the lines to the new file
                 else:
@@ -125,14 +130,15 @@ with open(".exported.tcl", 'r') as fin:
     
         fout.write("\n")
 
-        # At the end of the tcl, add commands to include the block designs and generate the wrappers
-        if VivadoInstalled == "v2017.2":
-            print("Adding block design tcls\n")
-            for file in os.listdir(SourcesBdDir):
-                if file.endswith(".tcl"):
-                    fout.write("source " + SourcesBdDir + "/" + file + "\n")
+        # At the end of the tcl, add commands to include the block designs (if available) and generate the wrappers
+        if block_design == 1:
+            if VivadoInstalled == "v2017.2":
+                print("Adding block design tcls\n")
+                for file in os.listdir(SourcesBdDir):
+                    if file.endswith(".tcl"):
+                        fout.write("source " + SourcesBdDir + "/" + file + "\n")
 
-        fout.write("add_files -norecurse -force [make_wrapper -files [get_files *.bd] -top]\n")
+            fout.write("add_files -norecurse -force [make_wrapper -files [get_files *.bd] -top]\n")
 
 # Remove the temporary tcl file
 os.remove(".exported.tcl")

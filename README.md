@@ -34,7 +34,7 @@ The project must have a specific folder structure. It is as follows:
 1. Create the root folder and initialize it with git
 2. Add this project as a submodule:
 ```
-git submodule add https://axgit03.axon.nl/Tools/vivado-git.git
+git submodule add git@axgit03.axon.nl:Tools/vivado-git.git
 ```
 3. Create the following directories in the root folder: **workspace**, **sources**. Optionally create an **ips** if IPs versioned separately are to be included in the project
    - All sources (HDL files, constrain files, etc.) should be in the *sources* folder, and all external IPs that won't be committed with the project should be in *ips* directory. For SDK support scroll down
