@@ -4,6 +4,7 @@ import glob, os
 import ntpath
 import re
 from sys import platform
+from shutil import copytree, rmtree
 
 # Change to the correct directory
 if not os.path.exists("vivado-git/checkin.py"):
@@ -79,6 +80,11 @@ with open(".exported.tcl", 'r') as fin:
                         bad_sources = 0
                         total_sources = 0
 
+
+                # Save regex for XCI IPs
+                XciRegEx = re.match(r"^\s+\"\[file normalize \"\$origin_dir/(workspace/[^ ]+/ip/([^ ]+))/([^ /]+.xci)\"]\"\\", line)
+
+                # Save regex for the create_project command
                 CreateProjectRegEx = re.match(r"^create_project.* -part (.*)", line)
 
                 # Modify "create_project" command to store the project inside the workspace directory
@@ -117,6 +123,16 @@ with open(".exported.tcl", 'r') as fin:
                     fout.write("## Vivado-git removed ## " + line)
                     rem = 3
                     block_design = 1
+
+                # Copy xci IPs to sources and link to them
+                elif XciRegEx != None:
+                    if not os.path.isdir("sources/ips"):
+                        os.makedirs("sources/ips")
+                    print(line)
+                    if os.path.isdir("sources/ips/" + XciRegEx.group(2)):
+                        rmtree("sources/ips/" + XciRegEx.group(2))
+                    copytree(XciRegEx.group(1), "sources/ips/" + XciRegEx.group(2))
+                    fout.write(" \"[file normalize \"sources/ips/" + XciRegEx.group(2) + "/" + XciRegEx.group(3) + "\"]\"\\\n")
 
                 # Write the lines to the new file
                 else:
