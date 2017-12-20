@@ -4,7 +4,7 @@ import glob, os
 import ntpath
 import re
 from sys import platform
-from shutil import copytree, rmtree
+from shutil import copytree, rmtree, copy
 
 # Change to the correct directory
 if not os.path.exists("vivado-git/checkin.py"):
@@ -62,6 +62,7 @@ total_sources = 0
 bad_sources = 0
 count_sources = 0
 block_design = 0
+XciFile = 0
 # The tcl is stored in a temporary file so it can be processed and the end result is saved in /tcl/ folder
 with open(".exported.tcl", 'r') as fin:
     with open("tcl/" + ProjectName + ".tcl", 'w') as fout:
@@ -79,8 +80,7 @@ with open(".exported.tcl", 'r') as fin:
                         count_sources = 0
                         bad_sources = 0
                         total_sources = 0
-
-
+                
                 # Save regex for XCI IPs
                 XciRegEx = re.match(r"^\s+\"\[file normalize \"\$origin_dir/(workspace/[^ ]+/ip/([^ ]+))/([^ /]+.xci)\"]\"\\", line)
 
@@ -131,12 +131,23 @@ with open(".exported.tcl", 'r') as fin:
                     print(line)
                     if os.path.isdir("sources/ips/" + XciRegEx.group(2)):
                         rmtree("sources/ips/" + XciRegEx.group(2))
-                    copytree(XciRegEx.group(1), "sources/ips/" + XciRegEx.group(2))
+                    try:
+                        copytree(XciRegEx.group(1), "sources/ips/" + XciRegEx.group(2))
+                    except OSError:
+                        copy(XciRegEx.group(1) + ".xcix", "sources/ips/")
                     fout.write(" \"[file normalize \"sources/ips/" + XciRegEx.group(2) + "/" + XciRegEx.group(3) + "\"]\"\\\n")
+                    XciFile = 2
 
                 # Write the lines to the new file
                 else:
-                    fout.write(line)
+                    if XciFile > 0:
+                        if XciFile == 2:
+                            fout.write(line)
+                        if XciFile == 1:
+                            fout.write("add_files -norecurse -fileset $obj $files\n")
+                        XciFile = XciFile - 1
+                    else:
+                        fout.write(line)
 
             # Necessary as the block design wrappers have also some extra lines belonging to them that need to be removed
             else:
