@@ -63,6 +63,9 @@ bad_sources = 0
 count_sources = 0
 block_design = 0
 XciFile = 0
+fnormalize_wrapper = ""
+fset_wrapper = ""
+wrapper_description = 0
 # The tcl is stored in a temporary file so it can be processed and the end result is saved in /tcl/ folder
 with open(".exported.tcl", 'r') as fin:
     with open("tcl/" + ProjectName + ".tcl", 'w') as fout:
@@ -100,7 +103,9 @@ with open(".exported.tcl", 'r') as fin:
                 elif re.match(r"^set file \"hdl/[^ /]+_wrapper\.v(?:hd)?\"", line) != None:
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
-                    rem = 2
+                    fset_wrapper = fset_wrapper + line
+                    wrapper_description = 1
+                    rem = 3
                     block_design = 1
 
                 # Remove all the references to block design
@@ -115,6 +120,17 @@ with open(".exported.tcl", 'r') as fin:
                     bad_sources = bad_sources + 1
                     print(line)
                     fout.write("## Vivado-git removed ## " + line)
+                    fnormalize_wrapper = fnormalize_wrapper + line
+                    block_design = 1
+
+                # Remove the block design wrappers. They will be auto-generated later
+                elif re.match(r"^\s+\"\[file normalize \".*/.*\.srcs/[^ /]+/[^ /]+/hdl/.*_wrapper.v(?:hd)?\"]\"\\", line) != None:
+                    correct_wrapper = re.match(r"(^\s+\"\[file normalize \".*/.*\.srcs/[^ /]+/)[^ /]+/hdl/((.*)_wrapper.v(?:hd)?)(\"]\"\\)", line)
+                    correct_route = correct_wrapper.group(1) + "bd/" + correct_wrapper.group(3) + "/hdl/" + correct_wrapper.group(2) + correct_wrapper.group(4)
+                    bad_sources = bad_sources + 1
+                    print(line)
+                    fout.write("## Vivado-git removed ## " + line)
+                    fnormalize_wrapper = fnormalize_wrapper + correct_route + "\n"
                     block_design = 1
 
                 # Remove the block design wrappers. They will be auto-generated later
@@ -152,6 +168,11 @@ with open(".exported.tcl", 'r') as fin:
             # Necessary as the block design wrappers have also some extra lines belonging to them that need to be removed
             else:
                 rem = rem - 1;
+                if wrapper_description == 1:
+                    fset_wrapper = fset_wrapper + line 
+                    if rem == 0:
+                        fset_wrapper = fset_wrapper + "\n"
+                        wrapper_description = 0
                 fout.write("## Vivado-git removed ## " + line)
                 print(line)
     
@@ -165,7 +186,14 @@ with open(".exported.tcl", 'r') as fin:
                     if file.endswith(".tcl"):
                         fout.write("source " + SourcesBdDir + "/" + file + "\n")
 
-            fout.write("add_files -norecurse -force [make_wrapper -files [get_files *.bd] -top]\n")
+            #fout.write("add_files -norecurse -force [make_wrapper -files [get_files *.bd] -top]\n")
+            fout.write("make_wrapper -files [get_files *.bd] -top\n")
+            fout.write("set files [list \\\n")
+            fout.write(fnormalize_wrapper)
+            fout.write("]\n")
+            fout.write("set imported_files [import_files -fileset sources_1 $files]\n")
+            fout.write("\n")
+            fout.write(fset_wrapper)
 
 # Remove the temporary tcl file
 os.remove(".exported.tcl")
