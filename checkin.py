@@ -124,7 +124,7 @@ with open(".exported.tcl", 'r') as fin:
                     block_design = 1
 
                 # Remove the block design wrappers. They will be auto-generated later
-                elif re.match(r"^\s+\"\[file normalize \".*/.*\.srcs/[^ /]+/[^ /]+/hdl/.*_wrapper.v(?:hd)?\"]\"\\", line) != None:
+                elif re.match(r"^\s+\"\[file normalize \".*/.*\.srcs/[^ /]+/[^ ]+/hdl/.*_wrapper.v(?:hd)?\"]\"\\", line) != None:
                     correct_wrapper = re.match(r"(^\s+\"\[file normalize \".*/.*\.srcs/[^ /]+/)[^ /]+/hdl/((.*)_wrapper.v(?:hd)?)(\"]\"\\)", line)
                     correct_route = correct_wrapper.group(1) + "bd/" + correct_wrapper.group(3) + "/hdl/" + correct_wrapper.group(2) + correct_wrapper.group(4)
                     bad_sources = bad_sources + 1
