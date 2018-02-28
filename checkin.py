@@ -115,6 +115,12 @@ with open(".exported.tcl", 'r') as fin:
                     fout.write("## Vivado-git removed ## " + line)
                     block_design = 1
 
+                # Remove all the references to prj files
+                elif re.match(r"^\s+\"\[file normalize \".*/.*\.srcs/.*/*\.prj\"]\"\\", line) != None:
+                    bad_sources = bad_sources + 1
+                    print(line)
+                    fout.write("## Vivado-git removed ## " + line)
+
                 # Remove the block design wrappers. They will be auto-generated later
                 elif re.match(r"^\s+\"\[file normalize \"(.*)\.srcs/[^ /]+/bd/([^ /]+)/hdl/\2_wrapper.v(?:hd)?\"]\"\\", line) != None:
                     bad_sources = bad_sources + 1
@@ -139,6 +145,12 @@ with open(".exported.tcl", 'r') as fin:
                     fout.write("## Vivado-git removed ## " + line)
                     rem = 3
                     block_design = 1
+
+                # Remove the pjr files.
+                elif re.match(r"^set file \"[^ /]+/[^ /]+\.prj\"", line) != None:
+                    print(line)
+                    fout.write("## Vivado-git removed ## " + line)
+                    rem = 3
 
                 # Copy xci IPs to sources and link to them
                 elif XciRegEx != None:
