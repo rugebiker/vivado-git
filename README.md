@@ -1,11 +1,11 @@
 # Vivado-git scripts
-This scripts help to commit Vivado projects into Git.
+These scripts help to commit Vivado projects into Git.
 
 ### Dependencies
 - Python 2.7
 - OS: Tested on GNU/Linux and Windows
 - Python and Vivado binaries must be in your PATH
-  - To add Vivado to your path in Linux you can source "<Xilinx installation directory>/Vivado/<version>/settings64.sh". For Windows execute from the same directory "settings64.bat".
+  - To add Vivado to your path in Linux you can source "`<Xilinx installation directory>`/Vivado/`<version>`/settings64.sh". For Windows execute from the same directory "settings64.bat".
 - Tested with Vivado 2017.2, 2017.3, 2017.4
 
 ### Folder structure
@@ -19,12 +19,12 @@ The project must have a specific folder structure. It is as follows:
 |   +-- README.md # this readme file
 |   +-- gitignore # .gitignore template to only commit sources and tcls
 +-- workspace # Directory containing the Vivado project.
-|   +-- <vivado_project> # Name must be the same as the Vivado project name
+|   +-- `<vivado_project>` # Name must be the same as the Vivado project name
 +-- sources # Directory containing all the sources (HDL files, constrains, etc.). The structure under this directory can be any
 +-- ips # Directory containing all the packaged IPs. This is the top-level directory to be imported into the Vivado repositories
 +-- tcl # Directory that will contain the generated tcl scripts to regenerate the project
-|   +-- <vivado_project>.tcl # script to regenerate the project
-|   +-- <vivado_project>.bd # directory containing the tcls to regenerate the block designs
+|   +-- `<vivado_project>`.tcl # script to regenerate the project
+|   +-- `<vivado_project>`.bd # directory containing the tcls to regenerate the block designs
 ```
 
 **IMPORTANT**: It is very important that all the external IPs are cloned/copied into the project in the IPs folder. If one of them is missing, the project will fail to be regenerated. You can also add them as submodules.
