@@ -31,7 +31,7 @@ else:
 VivadoVersion = VivadoProcess.stdout.read()
 VivadoRegEx = re.match(r"^Vivado (v.*) ", VivadoVersion)
 VivadoInstalled = VivadoRegEx.group(1)
-if VivadoInstalled in ("v2017.2", "v2017.3"):
+if VivadoInstalled in ("v2017.2", "v2017.3", "v2017.4"):
     print ("Vivado version being used: " + VivadoInstalled)
 else:
     print ("Warning: Generating scripts with an untested Vivado version, please test the checkout script after generating the scripts")
